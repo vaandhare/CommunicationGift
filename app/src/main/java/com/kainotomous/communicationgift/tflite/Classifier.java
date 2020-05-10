@@ -1,18 +1,3 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
-
 package com.kainotomous.communicationgift.tflite;
 
 import android.app.Activity;
@@ -20,17 +5,11 @@ import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.os.Trace;
-import java.io.IOException;
-import java.nio.MappedByteBuffer;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
+
+import com.kainotomous.communicationgift.env.Logger;
+
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
-import com.kainotomous.communicationgift.env.Logger;
-import com.kainotomous.communicationgift.tflite.Classifier.Device;
 import org.tensorflow.lite.gpu.GpuDelegate;
 import org.tensorflow.lite.support.common.FileUtil;
 import org.tensorflow.lite.support.common.TensorOperator;
@@ -43,6 +22,14 @@ import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp;
 import org.tensorflow.lite.support.image.ops.Rot90Op;
 import org.tensorflow.lite.support.label.TensorLabel;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
+
+import java.io.IOException;
+import java.nio.MappedByteBuffer;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
 
 /** A classifier specialized to label images using TensorFlow Lite. */
 public abstract class Classifier {
@@ -67,11 +54,9 @@ public abstract class Classifier {
   private final int imageSizeY;
 
   /** Optional GPU delegate for acceleration. */
-  // TODO: Declare a GPU delegate
   private GpuDelegate gpuDelegate = null;
 
   /** An instance of the driver class to run model inference with Tensorflow Lite. */
-  // TODO: Declare a TFLite interpreter
   protected Interpreter tflite;
 
   /** Options for configuring the Interpreter. */
@@ -96,82 +81,11 @@ public abstract class Classifier {
     return new ClassifierFloatMobileNet(activity, device, numThreads);
   }
 
-  /** An immutable result returned by a Classifier describing what was recognized. */
-  public static class Recognition {
-    /**
-     * A unique identifier for what has been recognized. Specific to the class, not the instance of
-     * the object.
-     */
-    private final String id;
-
-    /** Display name for the recognition. */
-    private final String title;
-
-    /**
-     * A sortable score for how good the recognition is relative to others. Higher should be better.
-     */
-    private final Float confidence;
-
-    /** Optional location within the source image for the location of the recognized object. */
-    private RectF location;
-
-    public Recognition(
-        final String id, final String title, final Float confidence, final RectF location) {
-      this.id = id;
-      this.title = title;
-      this.confidence = confidence;
-      this.location = location;
-    }
-
-    public String getId() {
-      return id;
-    }
-
-    public String getTitle() {
-      return title;
-    }
-
-    public Float getConfidence() {
-      return confidence;
-    }
-
-    public RectF getLocation() {
-      return new RectF(location);
-    }
-
-    public void setLocation(RectF location) {
-      this.location = location;
-    }
-
-    @Override
-    public String toString() {
-      String resultString = "";
-      if (id != null) {
-        resultString += "[" + id + "] ";
-      }
-
-      if (title != null) {
-        resultString += title + " ";
-      }
-
-      if (confidence != null) {
-        resultString += String.format("(%.1f%%) ", confidence * 100.0f);
-      }
-
-      if (location != null) {
-        resultString += location + " ";
-      }
-
-      return resultString.trim();
-    }
-  }
-
   /** Initializes a {@code Classifier}. */
   protected Classifier(Activity activity, Device device, int numThreads) throws IOException {
     tfliteModel = FileUtil.loadMappedFile(activity, getModelPath());
     switch (device) {
       case GPU:
-        // TODO: Create a GPU delegate instance and add it to the interpreter options
         gpuDelegate = new GpuDelegate();
         tfliteOptions.addDelegate(gpuDelegate);
         break;
@@ -179,7 +93,7 @@ public abstract class Classifier {
         break;
     }
     tfliteOptions.setNumThreads(numThreads);
-    // TODO: Create a TFLite interpreter instance
+
     tflite = new Interpreter(tfliteModel, tfliteOptions);
 
     // Loads labels out from the label file.
@@ -223,48 +137,17 @@ public abstract class Classifier {
     // Runs the inference call.
     Trace.beginSection("runInference");
     long startTimeForReference = SystemClock.uptimeMillis();
-    // TODO: Run TFLite inference
+
     tflite.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
     long endTimeForReference = SystemClock.uptimeMillis();
     Trace.endSection();
     LOGGER.v("Timecost to run model inference: " + (endTimeForReference - startTimeForReference));
 
-    // Gets the map of label and probability.
-    // TODO: Use TensorLabel from TFLite Support Library to associate the probabilities
-    //       with category labels
-    Map<String, Float> labeledProbability =
-        new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
-            .getMapWithFloatValue();
+      Map<String, Float> labeledProbability = new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer)).getMapWithFloatValue();
     Trace.endSection();
 
     // Gets top-k results.
     return getTopKProbability(labeledProbability);
-  }
-
-  /** Closes the interpreter and model to release resources. */
-  public void close() {
-    if (tflite != null) {
-      // TODO: Close the interpreter
-      tflite.close();
-      tflite = null;
-    }
-    // TODO: Close the GPU delegate
-    if (gpuDelegate != null) {
-      gpuDelegate.close();
-      gpuDelegate = null;
-    }
-
-    tfliteModel = null;
-  }
-
-  /** Get the image size along the x axis. */
-  public int getImageSizeX() {
-    return imageSizeX;
-  }
-
-  /** Get the image size along the y axis. */
-  public int getImageSizeY() {
-    return imageSizeY;
   }
 
   /** Loads input image, and applies preprocessing. */
@@ -275,9 +158,8 @@ public abstract class Classifier {
     // Creates processor for the TensorImage.
     int cropSize = Math.min(bitmap.getWidth(), bitmap.getHeight());
     int numRoration = sensorOrientation / 90;
-    // TODO(b/143564309): Fuse ops inside ImageProcessor.
-    // TODO: Define an ImageProcessor from TFLite Support Library to do preprocessing
-    ImageProcessor imageProcessor =
+
+      ImageProcessor imageProcessor =
         new ImageProcessor.Builder()
             .add(new ResizeWithCropOrPadOp(cropSize, cropSize))
             .add(new ResizeOp(imageSizeX, imageSizeY, ResizeMethod.NEAREST_NEIGHBOR))
@@ -287,8 +169,113 @@ public abstract class Classifier {
     return imageProcessor.process(inputImageBuffer);
   }
 
-  /** Gets the top-k results. */
-  private static List<Recognition> getTopKProbability(Map<String, Float> labelProb) {
+    /**
+     * Closes the interpreter and model to release resources.
+     */
+    public void close() {
+        if (tflite != null) {
+            tflite.close();
+            tflite = null;
+        }
+        if (gpuDelegate != null) {
+            gpuDelegate.close();
+            gpuDelegate = null;
+        }
+
+        tfliteModel = null;
+    }
+
+    /**
+     * Get the image size along the x axis.
+     */
+    public int getImageSizeX() {
+        return imageSizeX;
+    }
+
+    /**
+     * Get the image size along the y axis.
+     */
+    public int getImageSizeY() {
+        return imageSizeY;
+    }
+
+    /**
+     * An immutable result returned by a Classifier describing what was recognized.
+     */
+    public static class Recognition {
+        /**
+         * A unique identifier for what has been recognized. Specific to the class, not the instance of
+         * the object.
+         */
+        private final String id;
+
+        /**
+         * Display name for the recognition.
+         */
+        private final String title;
+
+        /**
+         * A sortable score for how good the recognition is relative to others. Higher should be better.
+         */
+        private final Float confidence;
+
+        /**
+         * Optional location within the source image for the location of the recognized object.
+         */
+        private RectF location;
+
+        public Recognition(final String id, final String title, final Float confidence, final RectF location) {
+            this.id = id;
+            this.title = title;
+            this.confidence = confidence;
+            this.location = location;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public Float getConfidence() {
+            return confidence;
+        }
+
+        public RectF getLocation() {
+            return new RectF(location);
+        }
+
+        public void setLocation(RectF location) {
+            this.location = location;
+        }
+
+        @Override
+        public String toString() {
+            String resultString = "";
+            if (id != null) {
+                resultString += "[" + id + "] ";
+            }
+
+            if (title != null) {
+                resultString += title + " ";
+            }
+
+            if (confidence != null) {
+                resultString += String.format("(%.1f%%) ", confidence * 100.0f);
+            }
+
+            if (location != null) {
+                resultString += location + " ";
+            }
+
+            return resultString.trim();
+        }
+    }
+
+    /** Gets the top-k results. */
+    private static List<Recognition> getTopKProbability(Map<String, Float> labelProb) {
     // Find the best classifications.
     PriorityQueue<Recognition> pq =
         new PriorityQueue<>(
@@ -322,13 +309,5 @@ public abstract class Classifier {
   /** Gets the TensorOperator to nomalize the input image in preprocessing. */
   protected abstract TensorOperator getPreprocessNormalizeOp();
 
-  /**
-   * Gets the TensorOperator to dequantize the output probability in post processing.
-   *
-   * <p>For quantized model, we need de-quantize the prediction with NormalizeOp (as they are all
-   * essentially linear transformation). For float model, de-quantize is not required. But to
-   * uniform the API, de-quantize is added to float model too. Mean and std are set to 0.0f and
-   * 1.0f, respectively.
-   */
   protected abstract TensorOperator getPostprocessNormalizeOp();
 }

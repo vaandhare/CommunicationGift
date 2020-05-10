@@ -7,12 +7,14 @@ import android.media.ImageReader.OnImageAvailableListener;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
-import java.io.IOException;
-import java.util.List;
+
 import com.kainotomous.communicationgift.env.BorderedText;
 import com.kainotomous.communicationgift.env.Logger;
 import com.kainotomous.communicationgift.tflite.Classifier;
 import com.kainotomous.communicationgift.tflite.Classifier.Device;
+
+import java.io.IOException;
+import java.util.List;
 
 public class ClassifierActivity extends CameraActivity implements OnImageAvailableListener {
   private static final Logger LOGGER = new Logger();
@@ -30,7 +32,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
 
   @Override
   protected int getLayoutId() {
-    return R.layout.tfe_ic_camera_connection_fragment;
+      return R.layout.camera_connection_fragment;
   }
 
   @Override
@@ -91,6 +93,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
                     }
                   });
             }
+              //We can add here delay
             readyForNextImage();
           }
         });

@@ -52,6 +52,10 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
+import com.kainotomous.communicationgift.customview.AutoFitTextureView;
+import com.kainotomous.communicationgift.env.Logger;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,8 +63,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import com.kainotomous.communicationgift.customview.AutoFitTextureView;
-import com.kainotomous.communicationgift.env.Logger;
 
 /**
  * Camera Connection Fragment that captures images from camera.
@@ -72,10 +74,6 @@ import com.kainotomous.communicationgift.env.Logger;
 public class CameraConnectionFragment extends Fragment {
   private static final Logger LOGGER = new Logger();
 
-  /**
-   * The camera preview size will be chosen to be the smallest frame by pixel size capable of
-   * containing a DESIRED_SIZE x DESIRED_SIZE square.
-   */
   private static final int MINIMUM_PREVIEW_SIZE = 320;
 
   /** Conversion from screen rotation to JPEG orientation. */
@@ -204,16 +202,8 @@ public class CameraConnectionFragment extends Fragment {
     this.inputSize = inputSize;
   }
 
-  /**
-   * Given {@code choices} of {@code Size}s supported by a camera, chooses the smallest one whose
-   * width and height are at least as large as the minimum of both, or an exact match if possible.
-   *
-   * @param choices The list of sizes that the camera supports for the intended output class
-   * @param width The minimum desired width
-   * @param height The minimum desired height
-   * @return The optimal {@code Size}, or an arbitrary one if none were big enough
-   */
-  protected static Size chooseOptimalSize(final Size[] choices, final int width, final int height) {
+
+    protected static Size chooseOptimalSize(final Size[] choices, final int width, final int height) {
     final int minSize = Math.max(Math.min(width, height), MINIMUM_PREVIEW_SIZE);
     final Size desiredSize = new Size(width, height);
 

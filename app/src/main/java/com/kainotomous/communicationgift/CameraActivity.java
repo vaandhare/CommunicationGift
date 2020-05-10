@@ -18,8 +18,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Trace;
-import androidx.annotation.UiThread;
-import androidx.appcompat.app.AppCompatActivity;
 import android.util.Size;
 import android.view.Surface;
 import android.view.View;
@@ -28,19 +26,22 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
+import androidx.annotation.UiThread;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.kainotomous.communicationgift.env.ImageUtils;
 import com.kainotomous.communicationgift.env.Logger;
 import com.kainotomous.communicationgift.tflite.Classifier.Device;
 import com.kainotomous.communicationgift.tflite.Classifier.Recognition;
+
+import java.nio.ByteBuffer;
+import java.util.List;
 
 public abstract class CameraActivity extends AppCompatActivity
     implements OnImageAvailableListener,
@@ -80,9 +81,10 @@ public abstract class CameraActivity extends AppCompatActivity
   private ImageView plusImageView, minusImageView, clearImageView;
   private Spinner deviceSpinner;
   private TextView threadsTextView;
-  private TextView recogSentenceTextView;
+    private TextView recogSentenceTextView, hueTextView, saturationTextView, brightnessTextView;
   private StringBuilder recogSentenceString = new StringBuilder(" ");
-
+    private SeekBar HueSeekBar, SaturationSeekBar, BrightnessSeekBar;
+    private int hueValue = 0, saturationValue = 0, brightnessValue = 0;
 
   private Device device = Device.CPU;
   private int numThreads = -1;
@@ -94,7 +96,7 @@ public abstract class CameraActivity extends AppCompatActivity
     super.onCreate(null);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-    setContentView(R.layout.tfe_ic_activity_camera);
+      setContentView(R.layout.activity_camera);
 
     if (hasPermission()) {
       setFragment();
@@ -111,6 +113,12 @@ public abstract class CameraActivity extends AppCompatActivity
     sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
     recogSentenceTextView = findViewById(R.id.detected_sentence);
     clearImageView = findViewById(R.id.clearText);
+      HueSeekBar = findViewById(R.id.HueSeekBar);
+      SaturationSeekBar = findViewById(R.id.SaturationSeekBar);
+      BrightnessSeekBar = findViewById(R.id.BrightnessSeekBar);
+      hueTextView = findViewById(R.id.HueText);
+      saturationTextView = findViewById(R.id.SaturationText);
+      brightnessTextView = findViewById(R.id.BrightnessText);
 
     ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
     vto.addOnGlobalLayoutListener(
@@ -153,12 +161,68 @@ public abstract class CameraActivity extends AppCompatActivity
     device = Device.valueOf(deviceSpinner.getSelectedItem().toString());
     numThreads = Integer.parseInt(threadsTextView.getText().toString().trim());
 
+
     clearImageView.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         recognition1TextView.setText(recogSentenceString.replace(0, recogSentenceString.length(), " "));
       }
     });
+
+
+      HueSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+          @Override
+          public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+              hueValue = progress;
+              hueTextView.setText("H: " + (progress - 50) + "%");
+          }
+
+          @Override
+          public void onStartTrackingTouch(SeekBar seekBar) {
+
+          }
+
+          @Override
+          public void onStopTrackingTouch(SeekBar seekBar) {
+
+          }
+      });
+
+      SaturationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+          @Override
+          public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+              saturationValue = progress;
+              saturationTextView.setText("S: " + (progress - 50) + "%");
+          }
+
+          @Override
+          public void onStartTrackingTouch(SeekBar seekBar) {
+
+          }
+
+          @Override
+          public void onStopTrackingTouch(SeekBar seekBar) {
+
+          }
+      });
+
+      BrightnessSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+          @Override
+          public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+              brightnessValue = progress;
+              brightnessTextView.setText("V: " + (progress - 50) + "%");
+          }
+
+          @Override
+          public void onStartTrackingTouch(SeekBar seekBar) {
+
+          }
+
+          @Override
+          public void onStopTrackingTouch(SeekBar seekBar) {
+
+          }
+      });
 
   }
 
@@ -228,7 +292,7 @@ public abstract class CameraActivity extends AppCompatActivity
       return;
     }
     if (rgbBytes == null) {
-      rgbBytes = new int[previewWidth * previewHeight];
+        rgbBytes = new int[previewWidth * previewHeight];
     }
     try {
       final Image image = reader.acquireLatestImage();
@@ -515,8 +579,11 @@ public abstract class CameraActivity extends AppCompatActivity
   }
 
   protected void showDetectedSentence(String result, double accuracy){
-    if(result!=null && accuracy > 0.95)
-      recogSentenceTextView.setText(recogSentenceString.append(result));
+      if (result != null && accuracy > 0.9) {
+          String str = Character.toString(recogSentenceString.charAt(recogSentenceString.length() - 1));
+          if (!result.equals(str))
+              recogSentenceTextView.setText(recogSentenceString.append(result));
+      }
   }
 
 //  protected void showFrameInfo(String frameInfo) {

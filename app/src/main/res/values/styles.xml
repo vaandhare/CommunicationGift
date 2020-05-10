@@ -8,7 +8,4 @@
         <item name="colorAccent">@color/tfe_color_accent</item>
     </style>
 
-    <style name="SplashTheme" parent="AppTheme.ImageClassification">
-        <item name="android:windowBackground">@drawable/splashscreen</item>
-    </style>
 </resources>
