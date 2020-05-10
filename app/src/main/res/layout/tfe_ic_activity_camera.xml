@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#00000000">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#00000000"
+        android:orientation="vertical">
+
+
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/black"
+            tools:context="com.kainotomous.communicationgift.CameraActivity" />
+
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:layout_alignParentTop="true"
+            android:background="@color/tfe_semi_transparent">
+
+<!--            <ImageView-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:layout_marginRight="20dp"-->
+<!--                android:src="@drawable/facefirst"-->
+<!--                android:layout_marginTop="0dp"/>-->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Communication Gift for Deaf n Dumb"
+                android:textSize="20dp"
+                android:textStyle="italic|bold"
+                android:textColor="#fff"
+                android:gravity="center"
+                android:layout_marginTop="0dp"/>
+
+
+        </androidx.appcompat.widget.Toolbar>
+
+    </RelativeLayout>
+
+    <include
+        android:id="@+id/bottom_sheet_layout"
+        layout="@layout/tfe_ic_layout_bottom_sheet" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
