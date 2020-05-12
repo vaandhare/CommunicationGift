@@ -16,9 +16,11 @@ limitations under the License.
 package com.kainotomous.communicationgift.tflite;
 
 import android.app.Activity;
-import java.io.IOException;
+
 import org.tensorflow.lite.support.common.TensorOperator;
 import org.tensorflow.lite.support.common.ops.NormalizeOp;
+
+import java.io.IOException;
 
 /** This TensorFlowLite classifier works with the float MobileNet model. */
 public class ClassifierFloatMobileNet extends Classifier {
@@ -36,12 +38,8 @@ public class ClassifierFloatMobileNet extends Classifier {
 
   private static final float PROBABILITY_STD = 1.0f;
 
-  /**
-   * Initializes a {@code ClassifierFloatMobileNet}.
-   *
-   * @param activity
-   */
-  public ClassifierFloatMobileNet(Activity activity, Device device, int numThreads)
+
+  ClassifierFloatMobileNet(Activity activity, Device device, int numThreads)
       throws IOException {
     super(activity, device, numThreads);
   }

@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
-import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
 
@@ -21,14 +20,10 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
   private static final float TEXT_SIZE_DIP = 10;
   private Bitmap rgbFrameBitmap = null;
-  private long lastProcessingTimeMs;
+    //  private long lastProcessingTimeMs;
   private Integer sensorOrientation;
   private Classifier classifier;
-  private BorderedText borderedText;
-  /** Input image size of the model along x axis. */
-  private int imageSizeX;
   /** Input image size of the model along y axis. */
-  private int imageSizeY;
 
   @Override
   protected int getLayoutId() {
@@ -45,7 +40,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
     final float textSizePx =
         TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
-    borderedText = new BorderedText(textSizePx);
+      BorderedText borderedText = new BorderedText(textSizePx);
     borderedText.setTypeface(Typeface.MONOSPACE);
 
     recreateClassifier(getDevice(), getNumThreads());
@@ -67,36 +62,30 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   @Override
   protected void processImage() {
     rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
-    final int cropSize = Math.min(previewWidth, previewHeight);
+//    final int cropSize = Math.min(previewWidth, previewHeight);
 
     runInBackground(
-        new Runnable() {
-          @Override
-          public void run() {
-            if (classifier != null) {
-              final long startTime = SystemClock.uptimeMillis();
-              final List<Classifier.Recognition> results =
-                  classifier.recognizeImage(rgbFrameBitmap, sensorOrientation);
-              lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
-              LOGGER.v("Detect: %s", results);
+            () -> {
+                if (classifier != null) {
+//                final long startTime = SystemClock.uptimeMillis();
+                    final List<Classifier.Recognition> results =
+                            classifier.recognizeImage(rgbFrameBitmap, sensorOrientation);
+//                lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+                    LOGGER.v("Detect: %s", results);
 
-              runOnUiThread(
-                  new Runnable() {
-                    @Override
-                    public void run() {
-                      showResultsInBottomSheet(results);
-//                      showFrameInfo(previewWidth + "x" + previewHeight);
-//                      showCropInfo(imageSizeX + "x" + imageSizeY);
-//                      showCameraResolution(cropSize + "x" + cropSize);
-//                      showRotationInfo(String.valueOf(sensorOrientation));
-//                      showInference(lastProcessingTimeMs + "ms");
-                    }
-                  });
-            }
-              //We can add here delay
-            readyForNextImage();
-          }
-        });
+                    runOnUiThread(
+                            () -> {
+                                showResultsInBottomSheet(results);
+                                //                      showFrameInfo(previewWidth + "x" + previewHeight);
+                                //                      showCropInfo(imageSizeX + "x" + imageSizeY);
+                                //                      showCameraResolution(cropSize + "x" + cropSize);
+                                //                      showRotationInfo(String.valueOf(sensorOrientation));
+                                //                      showInference(lastProcessingTimeMs + "ms");
+                            });
+                }
+                //We can add here delay
+                readyForNextImage();
+            });
   }
 
   @Override
@@ -123,9 +112,5 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
     } catch (IOException e) {
       LOGGER.e(e, "Failed to create classifier.");
     }
-
-    // Updates the input image size.
-    imageSizeX = classifier.getImageSizeX();
-    imageSizeY = classifier.getImageSizeY();
   }
 }

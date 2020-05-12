@@ -26,7 +26,6 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -57,12 +56,11 @@ public abstract class Classifier {
   private GpuDelegate gpuDelegate = null;
 
   /** An instance of the driver class to run model inference with Tensorflow Lite. */
-  protected Interpreter tflite;
+  private Interpreter tflite;
 
-  /** Options for configuring the Interpreter. */
-  private final Interpreter.Options tfliteOptions = new Interpreter.Options();
-
-  /** Labels corresponding to the output of the vision model. */
+    /**
+     * Labels corresponding to the output of the vision model.
+     */
   private List<String> labels;
 
   /** Input image TensorBuffer. */
@@ -82,9 +80,11 @@ public abstract class Classifier {
   }
 
   /** Initializes a {@code Classifier}. */
-  protected Classifier(Activity activity, Device device, int numThreads) throws IOException {
+  Classifier(Activity activity, Device device, int numThreads) throws IOException {
     tfliteModel = FileUtil.loadMappedFile(activity, getModelPath());
-    switch (device) {
+
+      Interpreter.Options tfliteOptions = new Interpreter.Options();
+      switch (device) {
       case GPU:
         gpuDelegate = new GpuDelegate();
         tfliteOptions.addDelegate(gpuDelegate);
@@ -186,17 +186,28 @@ public abstract class Classifier {
     }
 
     /**
-     * Get the image size along the x axis.
+     * Gets the top-k results.
      */
-    public int getImageSizeX() {
-        return imageSizeX;
-    }
+    private static List<Recognition> getTopKProbability(Map<String, Float> labelProb) {
+        // Find the best classifications.
+        PriorityQueue<Recognition> pq =
+                new PriorityQueue<>(
+                        MAX_RESULTS,
+                        (lhs, rhs) -> {
+                            // Intentionally reversed to put high confidence at the head of the queue.
+                            return Float.compare(rhs.getConfidence(), lhs.getConfidence());
+                        });
 
-    /**
-     * Get the image size along the y axis.
-     */
-    public int getImageSizeY() {
-        return imageSizeY;
+        for (Map.Entry<String, Float> entry : labelProb.entrySet()) {
+            pq.add(new Recognition("" + entry.getKey(), entry.getKey(), entry.getValue(), null));
+        }
+
+        final ArrayList<Recognition> recognitions = new ArrayList<>();
+        int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
+        for (int i = 0; i < recognitionsSize; ++i) {
+            recognitions.add(pq.poll());
+        }
+        return recognitions;
     }
 
     /**
@@ -224,15 +235,11 @@ public abstract class Classifier {
          */
         private RectF location;
 
-        public Recognition(final String id, final String title, final Float confidence, final RectF location) {
+        Recognition(final String id, final String title, final Float confidence, final RectF location) {
             this.id = id;
             this.title = title;
             this.confidence = confidence;
             this.location = location;
-        }
-
-        public String getId() {
-            return id;
         }
 
         public String getTitle() {
@@ -241,14 +248,6 @@ public abstract class Classifier {
 
         public Float getConfidence() {
             return confidence;
-        }
-
-        public RectF getLocation() {
-            return new RectF(location);
-        }
-
-        public void setLocation(RectF location) {
-            this.location = location;
         }
 
         @Override
@@ -273,32 +272,6 @@ public abstract class Classifier {
             return resultString.trim();
         }
     }
-
-    /** Gets the top-k results. */
-    private static List<Recognition> getTopKProbability(Map<String, Float> labelProb) {
-    // Find the best classifications.
-    PriorityQueue<Recognition> pq =
-        new PriorityQueue<>(
-            MAX_RESULTS,
-            new Comparator<Recognition>() {
-              @Override
-              public int compare(Recognition lhs, Recognition rhs) {
-                // Intentionally reversed to put high confidence at the head of the queue.
-                return Float.compare(rhs.getConfidence(), lhs.getConfidence());
-              }
-            });
-
-    for (Map.Entry<String, Float> entry : labelProb.entrySet()) {
-      pq.add(new Recognition("" + entry.getKey(), entry.getKey(), entry.getValue(), null));
-    }
-
-    final ArrayList<Recognition> recognitions = new ArrayList<>();
-    int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
-    for (int i = 0; i < recognitionsSize; ++i) {
-      recognitions.add(pq.poll());
-    }
-    return recognitions;
-  }
 
   /** Gets the name of the model file stored in Assets. */
   protected abstract String getModelPath();

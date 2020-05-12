@@ -1,6 +1,7 @@
 package com.kainotomous.communicationgift;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -64,7 +65,6 @@ public abstract class CameraActivity extends AppCompatActivity
   private int yRowStride;
   private Runnable postInferenceCallback;
   private Runnable imageConverter;
-  private LinearLayout bottomSheetLayout;
   private LinearLayout gestureLayout;
   private BottomSheetBehavior<LinearLayout> sheetBehavior;
   protected TextView recognitionTextView,
@@ -78,13 +78,13 @@ public abstract class CameraActivity extends AppCompatActivity
 //      cameraResolutionTextView,
 //      rotationTextView,
 //      inferenceTimeTextView;
-  private ImageView plusImageView, minusImageView, clearImageView;
+private ImageView plusImageView;
+  private ImageView minusImageView;
   private Spinner deviceSpinner;
   private TextView threadsTextView;
     private TextView recogSentenceTextView, hueTextView, saturationTextView, brightnessTextView;
   private StringBuilder recogSentenceString = new StringBuilder(" ");
-    private SeekBar HueSeekBar, SaturationSeekBar, BrightnessSeekBar;
-    private int hueValue = 0, saturationValue = 0, brightnessValue = 0;
+  private int hueValue, saturationValue, brightnessValue;
 
   private Device device = Device.CPU;
   private int numThreads = -1;
@@ -108,14 +108,14 @@ public abstract class CameraActivity extends AppCompatActivity
     plusImageView = findViewById(R.id.plus);
     minusImageView = findViewById(R.id.minus);
     deviceSpinner = findViewById(R.id.device_spinner);
-    bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
+    LinearLayout bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
     gestureLayout = findViewById(R.id.gesture_layout);
     sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
     recogSentenceTextView = findViewById(R.id.detected_sentence);
-    clearImageView = findViewById(R.id.clearText);
-      HueSeekBar = findViewById(R.id.HueSeekBar);
-      SaturationSeekBar = findViewById(R.id.SaturationSeekBar);
-      BrightnessSeekBar = findViewById(R.id.BrightnessSeekBar);
+    ImageView clearImageView = findViewById(R.id.clearText);
+    SeekBar hueSeekBar = findViewById(R.id.HueSeekBar);
+    SeekBar saturationSeekBar = findViewById(R.id.SaturationSeekBar);
+    SeekBar brightnessSeekBar = findViewById(R.id.BrightnessSeekBar);
       hueTextView = findViewById(R.id.HueText);
       saturationTextView = findViewById(R.id.SaturationText);
       brightnessTextView = findViewById(R.id.BrightnessText);
@@ -125,12 +125,8 @@ public abstract class CameraActivity extends AppCompatActivity
         new ViewTreeObserver.OnGlobalLayoutListener() {
           @Override
           public void onGlobalLayout() {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-              gestureLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-            } else {
-              gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-            }
-            //                int width = bottomSheetLayout.getMeasuredWidth();
+            gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            // int width = bottomSheetLayout.getMeasuredWidth();
             int height = gestureLayout.getMeasuredHeight();
 
             sheetBehavior.setPeekHeight(height);
@@ -162,15 +158,10 @@ public abstract class CameraActivity extends AppCompatActivity
     numThreads = Integer.parseInt(threadsTextView.getText().toString().trim());
 
 
-    clearImageView.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        recognition1TextView.setText(recogSentenceString.replace(0, recogSentenceString.length(), " "));
-      }
-    });
+    clearImageView.setOnClickListener(v -> recognition1TextView.setText(recogSentenceString.replace(0, recogSentenceString.length(), " ")));
 
 
-      HueSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+    hueSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
           @Override
           public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
               hueValue = progress;
@@ -188,7 +179,7 @@ public abstract class CameraActivity extends AppCompatActivity
           }
       });
 
-      SaturationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+    saturationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
           @Override
           public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
               saturationValue = progress;
@@ -206,7 +197,7 @@ public abstract class CameraActivity extends AppCompatActivity
           }
       });
 
-      BrightnessSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+    brightnessSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
           @Override
           public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
               brightnessValue = progress;
@@ -229,14 +220,6 @@ public abstract class CameraActivity extends AppCompatActivity
   protected int[] getRgbBytes() {
     imageConverter.run();
     return rgbBytes;
-  }
-
-  protected int getLuminanceStride() {
-    return yRowStride;
-  }
-
-  protected byte[] getLuminance() {
-    return yuvBytes[0];
   }
 
   /** Callback for android.hardware.Camera API */
@@ -266,21 +249,13 @@ public abstract class CameraActivity extends AppCompatActivity
     yRowStride = previewWidth;
 
     imageConverter =
-        new Runnable() {
-          @Override
-          public void run() {
-            ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
-          }
-        };
+            () -> ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
 
     postInferenceCallback =
-        new Runnable() {
-          @Override
-          public void run() {
-            camera.addCallbackBuffer(bytes);
-            isProcessingFrame = false;
-          }
-        };
+            () -> {
+              camera.addCallbackBuffer(bytes);
+              isProcessingFrame = false;
+            };
     processImage();
   }
 
@@ -314,10 +289,7 @@ public abstract class CameraActivity extends AppCompatActivity
       final int uvPixelStride = planes[1].getPixelStride();
 
       imageConverter =
-          new Runnable() {
-            @Override
-            public void run() {
-              ImageUtils.convertYUV420ToARGB8888(
+              () -> ImageUtils.convertYUV420ToARGB8888(
                   yuvBytes[0],
                   yuvBytes[1],
                   yuvBytes[2],
@@ -327,17 +299,12 @@ public abstract class CameraActivity extends AppCompatActivity
                   uvRowStride,
                   uvPixelStride,
                   rgbBytes);
-            }
-          };
 
       postInferenceCallback =
-          new Runnable() {
-            @Override
-            public void run() {
-              image.close();
-              isProcessingFrame = false;
-            }
-          };
+              () -> {
+                image.close();
+                isProcessingFrame = false;
+              };
 
       processImage();
     } catch (final Exception e) {
@@ -494,14 +461,11 @@ public abstract class CameraActivity extends AppCompatActivity
     if (useCamera2API) {
       CameraConnectionFragment camera2Fragment =
           CameraConnectionFragment.newInstance(
-              new CameraConnectionFragment.ConnectionCallback() {
-                @Override
-                public void onPreviewSizeChosen(final Size size, final int rotation) {
-                  previewHeight = size.getHeight();
-                  previewWidth = size.getWidth();
-                  CameraActivity.this.onPreviewSizeChosen(size, rotation);
-                }
-              },
+                  (size, rotation) -> {
+                    previewHeight = size.getHeight();
+                    previewWidth = size.getWidth();
+                    CameraActivity.this.onPreviewSizeChosen(size, rotation);
+                  },
               this,
               getLayoutId(),
               getDesiredPreviewFrameSize());
@@ -545,9 +509,11 @@ public abstract class CameraActivity extends AppCompatActivity
         return 90;
       default:
         return 0;
+
     }
   }
 
+  @SuppressLint({"DefaultLocale", "SetTextI18n"})
   @UiThread
   protected void showResultsInBottomSheet(List<Recognition> results) {
     if (results != null && results.size() >= 3) {
@@ -565,7 +531,7 @@ public abstract class CameraActivity extends AppCompatActivity
         if (recognition1.getTitle() != null) recognition1TextView.setText(recognition1.getTitle());
         if (recognition1.getConfidence() != null)
           recognition1ValueTextView.setText(
-              String.format("%.2f", (100 * recognition1.getConfidence())) + "%");
+                  String.format("%.2f", (100 * recognition1.getConfidence())) + "%");
       }
 
       Recognition recognition2 = results.get(2);
@@ -573,7 +539,7 @@ public abstract class CameraActivity extends AppCompatActivity
         if (recognition2.getTitle() != null) recognition2TextView.setText(recognition2.getTitle());
         if (recognition2.getConfidence() != null)
           recognition2ValueTextView.setText(
-              String.format("%.2f", (100 * recognition2.getConfidence())) + "%");
+                  String.format("%.2f", (100 * recognition2.getConfidence())) + "%");
       }
     }
   }
