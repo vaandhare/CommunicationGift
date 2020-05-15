@@ -44,11 +44,9 @@ import com.kainotomous.communicationgift.tflite.Classifier.Recognition;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public abstract class CameraActivity extends AppCompatActivity
-    implements OnImageAvailableListener,
-        Camera.PreviewCallback,
-        View.OnClickListener,
-        AdapterView.OnItemSelectedListener {
+public abstract class CameraActivity extends AppCompatActivity implements OnImageAvailableListener,
+        Camera.PreviewCallback, View.OnClickListener, AdapterView.OnItemSelectedListener {
+
   private static final Logger LOGGER = new Logger();
 
   private static final int PERMISSIONS_REQUEST = 1;
@@ -67,22 +65,14 @@ public abstract class CameraActivity extends AppCompatActivity
   private Runnable imageConverter;
   private LinearLayout gestureLayout;
   private BottomSheetBehavior<LinearLayout> sheetBehavior;
-  protected TextView recognitionTextView,
-      recognition1TextView,
-      recognition2TextView,
-      recognitionValueTextView,
-      recognition1ValueTextView,
-      recognition2ValueTextView;
-//  protected TextView frameValueTextView,
-//      cropValueTextView,
-//      cameraResolutionTextView,
-//      rotationTextView,
-//      inferenceTimeTextView;
-private ImageView plusImageView;
+  protected TextView recognitionTextView, recognition1TextView, recognition2TextView,
+          recognitionValueTextView, recognition1ValueTextView, recognition2ValueTextView;
+
+  private ImageView plusImageView;
   private ImageView minusImageView;
   private Spinner deviceSpinner;
   private TextView threadsTextView;
-    private TextView recogSentenceTextView, hueTextView, saturationTextView, brightnessTextView;
+  private TextView recogSentenceTextView, hueTextView, saturationTextView, brightnessTextView;
   private StringBuilder recogSentenceString = new StringBuilder(" ");
   private int hueValue, saturationValue, brightnessValue;
 
@@ -96,13 +86,12 @@ private ImageView plusImageView;
     super.onCreate(null);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-      setContentView(R.layout.activity_camera);
+    setContentView(R.layout.activity_camera);
 
-    if (hasPermission()) {
+    if (hasPermission())
       setFragment();
-    } else {
+    else
       requestPermission();
-    }
 
     threadsTextView = findViewById(R.id.threads);
     plusImageView = findViewById(R.id.plus);
@@ -116,19 +105,16 @@ private ImageView plusImageView;
     SeekBar hueSeekBar = findViewById(R.id.HueSeekBar);
     SeekBar saturationSeekBar = findViewById(R.id.SaturationSeekBar);
     SeekBar brightnessSeekBar = findViewById(R.id.BrightnessSeekBar);
-      hueTextView = findViewById(R.id.HueText);
-      saturationTextView = findViewById(R.id.SaturationText);
-      brightnessTextView = findViewById(R.id.BrightnessText);
+    hueTextView = findViewById(R.id.HueText);
+    saturationTextView = findViewById(R.id.SaturationText);
+    brightnessTextView = findViewById(R.id.BrightnessText);
 
     ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
-    vto.addOnGlobalLayoutListener(
-        new ViewTreeObserver.OnGlobalLayoutListener() {
+    vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
           @Override
           public void onGlobalLayout() {
             gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-            // int width = bottomSheetLayout.getMeasuredWidth();
             int height = gestureLayout.getMeasuredHeight();
-
             sheetBehavior.setPeekHeight(height);
           }
         });
@@ -141,14 +127,7 @@ private ImageView plusImageView;
     recognition2TextView = findViewById(R.id.detected_item2);
     recognition2ValueTextView = findViewById(R.id.detected_item2_value);
 
-//    frameValueTextView = findViewById(R.id.frame_info);
-//    cropValueTextView = findViewById(R.id.crop_info);
-//    cameraResolutionTextView = findViewById(R.id.view_info);
-//    rotationTextView = findViewById(R.id.rotation_info);
-//    inferenceTimeTextView = findViewById(R.id.inference_info);
-
     deviceSpinner.setOnItemSelectedListener(this);
-
     plusImageView.setOnClickListener(this);
     minusImageView.setOnClickListener(this);
 
@@ -159,7 +138,6 @@ private ImageView plusImageView;
 
 
     clearImageView.setOnClickListener(v -> recognition1TextView.setText(recogSentenceString.replace(0, recogSentenceString.length(), " ")));
-
 
     hueSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
           @Override
@@ -226,7 +204,6 @@ private ImageView plusImageView;
   @Override
   public void onPreviewFrame(final byte[] bytes, final Camera camera) {
     if (isProcessingFrame) {
-      LOGGER.w("Dropping frame!");
       return;
     }
 
@@ -248,11 +225,9 @@ private ImageView plusImageView;
     yuvBytes[0] = bytes;
     yRowStride = previewWidth;
 
-    imageConverter =
-            () -> ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
+    imageConverter = () -> ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
 
-    postInferenceCallback =
-            () -> {
+    postInferenceCallback = () -> {
               camera.addCallbackBuffer(bytes);
               isProcessingFrame = false;
             };
@@ -272,10 +247,11 @@ private ImageView plusImageView;
     try {
       final Image image = reader.acquireLatestImage();
 
+      //TODO
+
       if (image == null) {
         return;
       }
-
       if (isProcessingFrame) {
         image.close();
         return;
@@ -288,8 +264,7 @@ private ImageView plusImageView;
       final int uvRowStride = planes[1].getRowStride();
       final int uvPixelStride = planes[1].getPixelStride();
 
-      imageConverter =
-              () -> ImageUtils.convertYUV420ToARGB8888(
+      imageConverter = () -> ImageUtils.convertYUV420ToARGB8888(
                   yuvBytes[0],
                   yuvBytes[1],
                   yuvBytes[2],
@@ -430,8 +405,7 @@ private ImageView plusImageView;
           continue;
         }
 
-        final StreamConfigurationMap map =
-            characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        final StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
         if (map == null) {
           continue;
@@ -440,10 +414,8 @@ private ImageView plusImageView;
         // Fallback to camera1 API for internal cameras that don't have full support.
         // This should help with legacy situations where using the camera2 API causes
         // distorted or otherwise broken previews.
-        useCamera2API =
-            (facing == CameraCharacteristics.LENS_FACING_EXTERNAL)
-                || isHardwareLevelSupported(
-                    characteristics, CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL);
+        useCamera2API = (facing == CameraCharacteristics.LENS_FACING_EXTERNAL) || isHardwareLevelSupported(
+                characteristics, CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL);
         LOGGER.i("Camera API lv2?: %s", useCamera2API);
         return cameraId;
       }
@@ -551,26 +523,6 @@ private ImageView plusImageView;
               recogSentenceTextView.setText(recogSentenceString.append(result));
       }
   }
-
-//  protected void showFrameInfo(String frameInfo) {
-//    frameValueTextView.setText(frameInfo);
-//  }
-//
-//  protected void showCropInfo(String cropInfo) {
-//    cropValueTextView.setText(cropInfo);
-//  }
-//
-//  protected void showCameraResolution(String cameraInfo) {
-//    cameraResolutionTextView.setText(cameraInfo);
-//  }
-//
-//  protected void showRotationInfo(String rotation) {
-//    rotationTextView.setText(rotation);
-//  }
-//
-//  protected void showInference(String inferenceTime) {
-//    inferenceTimeTextView.setText(inferenceTime);
-//  }
 
   protected Device getDevice() {
     return device;

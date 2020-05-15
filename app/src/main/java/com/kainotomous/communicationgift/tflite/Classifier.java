@@ -159,8 +159,7 @@ public abstract class Classifier {
     int cropSize = Math.min(bitmap.getWidth(), bitmap.getHeight());
     int numRoration = sensorOrientation / 90;
 
-      ImageProcessor imageProcessor =
-        new ImageProcessor.Builder()
+      ImageProcessor imageProcessor = new ImageProcessor.Builder()
             .add(new ResizeWithCropOrPadOp(cropSize, cropSize))
             .add(new ResizeOp(imageSizeX, imageSizeY, ResizeMethod.NEAREST_NEIGHBOR))
             .add(new Rot90Op(numRoration))
